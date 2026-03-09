@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat General - Biblioteca</title>
+    <style>
+        #chat-messages {
+            height: 300px;
+            border: 2px solid #11998e;
+            border-radius: 8px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f9f9f9;
+        }
+        .message { margin-bottom: 8px; border-bottom: 1px solid #eee; }
+    </style>
+</head>
+<body>
+    <div class="container" style="max-width: 600px; margin: 50px auto; padding: 20px;">
+        <h2>💬 Chat en Vivo</h2>
+        
+        <div id="chat-messages"></div>
+
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="chat-input" placeholder="Escribe un mensaje..." style="flex-grow: 1; padding: 10px;">
+            <button id="send-btn" style="padding: 10px 20px; background: #11998e; color: white; border: none; cursor: pointer;">
+                Enviar
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 1. Configurar la conexión
+        const chatSocket = new WebSocket(
+            'ws://' + window.location.host + '/ws/chat/general/'
+        );
+
+        chatSocket.onopen = () => console.log('✅ WebSocket conectado');
+
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            // IMPORTANTE: Asegúrate de que tu consumidor en Django envíe 'type': 'message'
+            if (data.message) {
+                addMessage(data.username || 'Anónimo', data.message);
+            }
+        };
+
+        chatSocket.onclose = () => console.error('❌ WebSocket cerrado');
+
+        // 2. Función para añadir al DOM
+        function addMessage(username, message) {
+            const messagesDiv = document.getElementById('chat-messages');
+            messagesDiv.innerHTML += `<div class="message"><strong>${username}:</strong> ${message}</div>`;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll al final
+        }
+
+        // 3. Lógica del botón enviar
+        document.getElementById('send-btn').onclick = function() {
+            const input = document.getElementById('chat-input');
+            if (input.value.trim() !== "") {
+                chatSocket.send(JSON.stringify({
+                    'message': input.value,
+                    'username': 'Sebastian' // Aquí puedes jalar el usuario de Django
+                }));
+                input.value = ''; // Limpiar input
+            }
+        };
+
+        // Enviar con la tecla Enter
+        document.getElementById('chat-input').onkeyup = function(e) {
+            if (e.keyCode === 13) document.getElementById('send-btn').click();
+        };
+    </script>
+</body>
+</html>
