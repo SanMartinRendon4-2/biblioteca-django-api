@@ -1,26 +1,29 @@
-"""
-URL configuration for biblioteca_project project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/4.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
 from django.urls import path, include
+from rest_framework_simplejwt.views import TokenRefreshView
+from libros.jwt_views import CustomTokenObtainPairView
+from libros import web_views  # ← AGREGAR
 
 urlpatterns = [
-    # Admin de Django
     path('admin/', admin.site.urls),
     
-    # ✨ URLs de la API (AGREGAR ESTA LÍNEA)
+    # 🔐 Endpoints de Autenticación JWT (SimpleJWT)
+    path('api/auth/jwt/login/', CustomTokenObtainPairView.as_view(), name='jwt_login'),
+    path('api/auth/jwt/refresh/', TokenRefreshView.as_view(), name='jwt_refresh'),
+
+    # 🌐 Autenticación Social (Google / Allauth)
+    # Esto habilitará rutas como /accounts/google/login/
+    path('accounts/', include('allauth.urls')),
+
+    # 🛡️ OAuth2 Provider (Django OAuth Toolkit)
+    # Útil si vas a registrar aplicaciones externas
+    path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
+
+    # 📚 URLs de tu lógica de negocio (App libros)
     path('api/', include('libros.api_urls')),
+
+# URLs de páginas web (para pruebas)
+    path('', web_views.home, name='home'),
+    path('oauth/login/', web_views.oauth_login, name='oauth_login'),
+    path('login/jwt/', web_views.jwt_login_page, name='jwt_login_page'),
 ]
